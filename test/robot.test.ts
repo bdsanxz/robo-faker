@@ -7,15 +7,15 @@ import {
   robotNames,
 } from "../src/index.js";
 
-/** Pendek 4-6 huruf, huruf pertama kapital, sisanya lowercase. */
+/** Short 4-6 letters, first capitalized, rest lowercase. */
 const SHORT = /^[A-Z][a-z]{3,5}$/;
-/** Dua konsonan berurutan (y dihitung konsonan). */
+/** Two back-to-back consonants (y counts as a consonant). */
 const HAS_CC = /[^aeiou]{2}/i;
 
-describe("robo-faker gaya pendek", () => {
-  it("mengekspos daftar curated + pola suku kata", () => {
+describe("robo-faker short style", () => {
+  it("exposes the curated list + syllable patterns", () => {
     expect(ROBOT_NAMES.length).toBeGreaterThan(0);
-    // De-duplikat (case-insensitive).
+    // De-duplicated (case-insensitive).
     expect(new Set(ROBOT_NAMES.map((n) => n.toLowerCase())).size).toBe(
       ROBOT_NAMES.length,
     );
@@ -24,7 +24,66 @@ describe("robo-faker gaya pendek", () => {
     expect(ROBOT_SUFFIXES.length).toBeGreaterThan(0);
   });
 
-  it("format: 4-6 huruf, kapital, tanpa angka/pemisah", () => {
+  it("keeps the original tables as a compatible prefix", () => {
+    expect(ROBOT_PREFIXES.slice(0, 16)).toEqual([
+      "Kr",
+      "Dr",
+      "Br",
+      "Zy",
+      "Vr",
+      "Kl",
+      "Gr",
+      "Pr",
+      "Th",
+      "Tr",
+      "Qy",
+      "Xy",
+      "Vy",
+      "Ky",
+      "Str",
+      "Thr",
+    ]);
+    expect(ROBOT_SUFFIXES.slice(0, 26)).toEqual([
+      "ro",
+      "yx",
+      "exi",
+      "yra",
+      "av",
+      "ynx",
+      "orn",
+      "yon",
+      "ix",
+      "yph",
+      "ion",
+      "ax",
+      "ber",
+      "ora",
+      "ron",
+      "ex",
+      "yza",
+      "tra",
+      "xon",
+      "rex",
+      "rix",
+      "uxa",
+      "ryx",
+      "nex",
+      "yro",
+      "yn",
+    ]);
+    expect(ROBOT_NAMES.slice(0, 8)).toEqual([
+      "Zyro",
+      "Kryx",
+      "Vexi",
+      "Xyra",
+      "Bryx",
+      "Drav",
+      "Klyx",
+      "Zynx",
+    ]);
+  });
+
+  it("format: 4-6 letters, capitalized, no digits/separators", () => {
     const batch = robotNames(50, { seed: "format" });
     expect(batch).toHaveLength(50);
     for (const name of batch) {
@@ -40,7 +99,7 @@ describe("robo-faker gaya pendek", () => {
     }
   });
 
-  it("sebagian besar hasil mengandung gugusan 2 konsonan", () => {
+  it("most results contain a 2-consonant cluster", () => {
     const generated = robotNames(50, { seed: "cc", curated: false });
     const genCc = generated.filter((n) => HAS_CC.test(n)).length;
     expect(genCc).toBeGreaterThanOrEqual(40);
@@ -50,7 +109,7 @@ describe("robo-faker gaya pendek", () => {
     expect(mixedCc).toBeGreaterThanOrEqual(35);
   });
 
-  it("deterministik per seed", () => {
+  it("is deterministic per seed", () => {
     expect(robotName({ seed: "herdr-1" })).toBe(robotName({ seed: "herdr-1" }));
     expect(robotName({ seed: 42 })).toBe(robotName({ seed: 42 }));
     expect(robotNames(10, { seed: "herdr-1" })).toEqual(
@@ -58,7 +117,7 @@ describe("robo-faker gaya pendek", () => {
     );
   });
 
-  it("menghindari taken (case-insensitive)", () => {
+  it("avoids taken (case-insensitive)", () => {
     const first = robotName({ seed: "s1" });
     const second = robotName({ seed: "s1", taken: [first.toUpperCase()] });
     expect(second.toLowerCase()).not.toBe(first.toLowerCase());
@@ -72,17 +131,50 @@ describe("robo-faker gaya pendek", () => {
     }
   });
 
-  it("count unik", () => {
+  it("keeps count unique", () => {
     const names = robotNames(20, { seed: "uniq" });
     expect(names).toHaveLength(20);
     expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(20);
   });
 
-  it("tetap unik saat meminta lebih dari jumlah ROBOT_NAMES", () => {
+  it("stays unique beyond ROBOT_NAMES.length", () => {
     const count = ROBOT_NAMES.length + 10;
     const names = robotNames(count, { seed: "overflow" });
     expect(names).toHaveLength(count);
     expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(count);
     for (const name of names) expect(name).toMatch(SHORT);
+  });
+
+  it("supports large generator-only batches", () => {
+    const names = robotNames(800, { seed: "large", curated: false });
+    expect(names).toHaveLength(800);
+    expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(800);
+    for (const name of names) expect(name).toMatch(SHORT);
+  });
+
+  it("fails fast when the namespace is exhausted", () => {
+    expect(() => robotNames(1_000_000, { seed: "nope" })).toThrow(
+      /covers the namespace/,
+    );
+    expect(() =>
+      robotNames(3, {
+        seed: "nope",
+        curated: false,
+        taken: robotNames(800, { seed: "nope", curated: false }),
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects invalid input", () => {
+    expect(() => robotNames(-1)).toThrow(RangeError);
+    expect(() => robotNames(1.5)).toThrow(RangeError);
+    expect(() => robotName({ seed: Number.NaN })).toThrow(TypeError);
+    expect(() => robotName({ curated: "yes" as unknown as boolean })).toThrow(
+      TypeError,
+    );
+    expect(() => robotName({ taken: 42 as unknown as string[] })).toThrow(
+      TypeError,
+    );
+    expect(robotNames(0)).toEqual([]);
   });
 });

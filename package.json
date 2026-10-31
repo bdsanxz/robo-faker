@@ -1,7 +1,7 @@
 {
   "name": "@xzy-ai/robo-faker",
   "version": "0.1.0",
-  "description": "Generate nama robotik pendek satu kata seperti Zyro untuk tab/agent otomatis.",
+  "description": "Short single-word robotic names like Zyro for automatic tabs/agents.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

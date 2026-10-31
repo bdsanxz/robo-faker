@@ -1,41 +1,48 @@
 # @xzy-ai/robo-faker
 
-Generate nama robotik pendek satu kata seperti `Zyro`, `Kryx`.
-Dipakai Herdr untuk menamai tab/agent baru otomatis.
+Short single-word robotic names like `Zyro`, `Kryx`.
+Used by Herdr to name new tabs/agents automatically.
 
-Tanpa dependency runtime. ESM only.
+No runtime dependencies. ESM only.
 
-## Pasang
+## Install
 
 ```sh
 pnpm add @xzy-ai/robo-faker
 ```
 
-## Pakai
+## Use
 
 ```ts
 import { robotName, robotNames } from "@xzy-ai/robo-faker";
 
-robotName(); // mis. "Zyro" (acak)
-robotName({ seed: "agent-1" }); // deterministik: seed sama → nama sama
-robotName({ taken: ["Zyro", "kryx"] }); // dijamin tidak mengembalikan taken (case-insensitive)
+robotName(); // e.g. "Zyro" (random)
+robotName({ seed: "agent-1" }); // deterministic: same seed → same name
+robotName({ taken: ["Zyro", "kryx"] }); // never returns a taken name (case-insensitive)
 
-robotNames(3, { seed: "tab-7" }); // mis. ["Drix", "Vynx", "Zyrex"]
-robotNames(60, { seed: "banyak" }); // > ROBOT_NAMES.length tetap unik (lanjut ke generator)
-robotNames(5, { curated: false, seed: "gen" }); // generator saja, tanpa daftar curated
+robotNames(3, { seed: "tab-7" }); // e.g. ["Drix", "Vynx", "Zyrex"]
+robotNames(800, { seed: "many" }); // stays unique while capacity allows
+robotNames(5, { curated: false, seed: "gen" }); // generator only, no curated list
 ```
 
 ## API
 
-- `robotName(options?)`: satu nama (`ROBOT_NAMES` dulu, lalu generator saat habis).
-- `robotNames(count, options?)`: `count` nama unik (case-insensitive), tidak ada di `taken`.
+- `robotName(options?)`: one name (`ROBOT_NAMES` first, then the generator).
+- `robotNames(count, options?)`: `count` unique names (case-insensitive), none in `taken`.
 - Options:
-  - `seed?: string | number` — hasil deterministik untuk seed yang sama.
-  - `taken?: Set<string> | string[]` — dibandingkan case-insensitive.
-  - `curated?: boolean` — default `true`. `false` = generator saja.
-- Ekspor lain: `ROBOT_NAMES` (curated, de-duplikat),
-  `ROBOT_PREFIXES` (onset gugusan konsonan: Kr, Dr, Xy, …),
-  `ROBOT_SUFFIXES` (rima pendek: yx, ron, tra, …).
+  - `seed?: string | number` — deterministic output for the same seed
+    within the same library version.
+  - `taken?: Set<string> | string[]` — compared case-insensitively.
+  - `curated?: boolean` — default `true`. `false` = generator only.
+- Also exported: `ROBOT_NAMES` (curated, de-duplicated),
+  `ROBOT_PREFIXES` (consonant-cluster onsets: Kr, Dr, Xy, …),
+  `ROBOT_SUFFIXES` (short rimes: yx, ron, tra, …).
 
-Format hasil: satu kata 4-6 huruf, huruf pertama kapital, tanpa angka/pemisah,
-gugusan 2 konsonan di sebagian besar hasil, tanpa rangkaian 3 vokal.
+Result shape: one word of 4-6 letters, first letter capitalized, no
+digits/separators, a 2-consonant cluster in most results, no run of
+3 vowels.
+
+Capacity: requesting more distinct names than the curated ∪ generator
+pool (minus `taken`) throws instead of looping. Seeded sequences are
+stable within a version; extending the tables in a new version may
+reshuffle them.

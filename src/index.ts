@@ -1,20 +1,26 @@
 /**
  * @xzy-ai/robo-faker
  *
- * Generate nama robotik pendek satu kata seperti `Zyro`, `Kryx`.
- * Tanpa dependency runtime. ESM only.
+ * Short single-word robotic names such as `Zyro`, `Kryx`.
+ * No runtime dependencies. ESM only.
  *
- * Sumber nama ada dua:
- * - `ROBOT_NAMES`: daftar curated dari user, dipakai dulu bila `curated: true`.
- * - Generator pola suku kata (onset gugusan konsonan + rima pendek)
- *   untuk saat daftar curated habis atau `curated: false`.
- *   Hasil selalu 4-6 huruf, huruf pertama kapital, tanpa angka/pemisah.
+ * Names come from two sources:
+ * - `ROBOT_NAMES`: a curated list, used first when `curated: true`.
+ * - A syllable-pattern generator (consonant-cluster onset + short rime)
+ *   once the curated list is exhausted or when `curated: false`.
+ *   Results are always 4-6 letters, first letter capitalized, no digits
+ *   or separators.
+ *
+ * Determinism note: a given `seed` always produces the same sequence
+ * within the same library version. Extending the tables in a new
+ * version can reshuffle seeded sequences, so seeds are stable
+ * per version, not across versions.
  */
 
 /**
- * Onset: gugusan 2 konsonan (Titlecase, 2-3 huruf).
- * Setiap hasil generator diawali salah satunya, jadi mayoritas
- * hasil mengandung gugusan konsonan berurutan.
+ * Onsets: 2-consonant clusters (Titlecase, 2-3 letters).
+ * Every generator result starts with one of these, so the vast
+ * majority of results contain back-to-back consonants.
  */
 export const ROBOT_PREFIXES: readonly string[] = [
   "Kr",
@@ -33,11 +39,31 @@ export const ROBOT_PREFIXES: readonly string[] = [
   "Ky",
   "Str",
   "Thr",
+  "Bl",
+  "Cl",
+  "Fl",
+  "Gl",
+  "Pl",
+  "Sl",
+  "Cr",
+  "Fr",
+  "Sk",
+  "Sp",
+  "St",
+  "Sh",
+  "Ch",
+  "Ph",
+  "Sn",
+  "Sm",
+  "Sw",
+  "Rh",
+  "Spr",
+  "Chr",
 ];
 
 /**
- * Rima pendek: nukleus vokal singkat + koda (lowercase, 2-3 huruf).
- * Vokal sedikit, sering memakai y, sering berakhir x/n/r/a.
+ * Short rimes: a brief vowel nucleus + coda (lowercase, 2-3 letters).
+ * Vowels are kept light with frequent y-endings in x/n/r/a.
  */
 export const ROBOT_SUFFIXES: readonly string[] = [
   "ro",
@@ -66,11 +92,39 @@ export const ROBOT_SUFFIXES: readonly string[] = [
   "nex",
   "yro",
   "yn",
+  "an",
+  "en",
+  "in",
+  "on",
+  "un",
+  "ar",
+  "er",
+  "ir",
+  "or",
+  "as",
+  "es",
+  "is",
+  "os",
+  "ak",
+  "ek",
+  "ok",
+  "al",
+  "el",
+  "ol",
+  "ath",
+  "esh",
+  "oth",
+  "ark",
+  "ork",
+  "elo",
+  "ara",
+  "ino",
+  "us",
 ];
 
 /**
- * Daftar curated dari user (de-duplikat, urutan asli dipertahankan).
- * Dipakai dulu saat `curated: true` (default).
+ * Curated list (de-duplicated, original order preserved).
+ * Used first when `curated: true` (the default).
  */
 export const ROBOT_NAMES: readonly string[] = [
   "Zyro",
@@ -122,37 +176,109 @@ export const ROBOT_NAMES: readonly string[] = [
   "Voryx",
   "Kynex",
   "Drexon",
+  "Blan",
+  "Clar",
+  "Flin",
+  "Glen",
+  "Plor",
+  "Slon",
+  "Crak",
+  "Frel",
+  "Skar",
+  "Spin",
+  "Ston",
+  "Shan",
+  "Chen",
+  "Phor",
+  "Snak",
+  "Smel",
+  "Swin",
+  "Rhon",
+  "Spran",
+  "Chren",
+  "Blark",
+  "Cloth",
+  "Flesh",
+  "Glino",
+  "Plara",
+  "Slelo",
+  "Croth",
+  "Frara",
+  "Skelo",
+  "Spara",
+  "Stath",
+  "Shelo",
+  "Chark",
+  "Phino",
+  "Snara",
+  "Smino",
+  "Swara",
+  "Rhelo",
+  "Blex",
+  "Clon",
+  "Glix",
+  "Slax",
+  "Frix",
+  "Skon",
+  "Spex",
+  "Stex",
+  "Shex",
+  "Chon",
+  "Phex",
+  "Snex",
+  "Smax",
+  "Swex",
+  "Rhex",
+  "Sprex",
+  "Blrex",
+  "Clrex",
+  "Flrex",
+  "Glrex",
+  "Plnex",
+  "Slnex",
+  "Crnex",
+  "Frnex",
+  "Sknex",
+  "Spelo",
+  "Stelo",
+  "Chrex",
+  "Shrex",
+  "Thelo",
+  "Threlo",
+  "Strelo",
+  "Drelo",
 ];
 
-/** Opsi untuk {@link robotName} dan {@link robotNames}. */
+/** Options for {@link robotName} and {@link robotNames}. */
 export interface RobotNameOptions {
   /**
-   * Seed deterministik. Seed yang sama selalu menghasilkan urutan yang sama.
-   * Tanpa seed hasilnya acak (`Math.random`).
+   * Deterministic seed. The same seed always yields the same sequence
+   * within the same library version.
+   * Without a seed the result is random (`Math.random`).
    */
   seed?: string | number;
   /**
-   * Nama yang tidak boleh dipakai. Perbandingan case-insensitive:
-   * `taken: ["kryx"]` memblokir `"Kryx"`.
-   * Hasil dijamin tidak ada di dalamnya (case-insensitive).
-   * Untuk `robotNames`, hasil juga unik satu sama lain.
+   * Names that must not be returned. Comparison is case-insensitive:
+   * `taken: ["kryx"]` blocks `"Kryx"`.
+   * Results are guaranteed to avoid them (case-insensitive).
+   * For `robotNames`, results are also unique among themselves.
    */
   taken?: Set<string> | readonly string[];
   /**
-   * Default `true`: pakai `ROBOT_NAMES` dulu (di-shuffle deterministik
-   * bila `seed` diisi), lalu generator onset+rima saat habis.
-   * `false`: langsung generator saja.
+   * Default `true`: use `ROBOT_NAMES` first (shuffled deterministically
+   * when `seed` is set), then the onset+rime generator once exhausted.
+   * `false`: generator only.
    */
   curated?: boolean;
 }
 
-/** Tiga vokal berurutan dibuang (tak pernah terjadi dengan daftar di atas; pengaman). */
+/** Three vowels in a row are discarded (never occurs with the tables above; guard). */
 const TRIPLE_VOWEL = /[aeiou]{3}/i;
 
 /**
- * Gabung onset + rima. Huruf ganda di perbatasan dibuang satu
+ * Join an onset + rime. A doubled letter at the boundary is dropped once
  * (`Xy` + `yra` → `Xyra`, `Qy` + `yph` → `Qyph`).
- * Hasil Titlecase: onset kapital + rima lowercase.
+ * Result is Titlecase: capitalized onset + lowercase rime.
  */
 function joinParts(prefix: string, suffix: string): string {
   const last = prefix[prefix.length - 1]?.toLowerCase() ?? "";
@@ -161,7 +287,7 @@ function joinParts(prefix: string, suffix: string): string {
   return head + suffix;
 }
 
-/** FNV-1a 32-bit untuk seed string. */
+/** FNV-1a 32-bit for string seeds. */
 function hashStringToUint32(input: string): number {
   let hash = 0x81_1c_9d_c5;
   for (let index = 0; index < input.length; index += 1) {
@@ -174,17 +300,17 @@ function hashStringToUint32(input: string): number {
 function seedToUint32(seed: string | number): number {
   if (typeof seed === "number") {
     if (!Number.isFinite(seed)) {
-      throw new TypeError("seed number harus finite");
+      throw new TypeError("seed number must be finite");
     }
     return Math.trunc(seed) >>> 0;
   }
   if (typeof seed === "string") {
     return hashStringToUint32(seed);
   }
-  throw new TypeError("seed harus string atau number");
+  throw new TypeError("seed must be a string or number");
 }
 
-/** PRNG mulberry32: kecil, cepat, deterministik. */
+/** PRNG mulberry32: small, fast, deterministic. */
 function mulberry32(state: number): () => number {
   let current = state >>> 0;
   return () => {
@@ -203,7 +329,7 @@ function createRandom(seed: string | number | undefined): () => number {
 function resolveCurated(curated: boolean | undefined): boolean {
   if (curated === undefined) return true;
   if (typeof curated !== "boolean") {
-    throw new TypeError("curated harus boolean");
+    throw new TypeError("curated must be a boolean");
   }
   return curated;
 }
@@ -220,10 +346,10 @@ function toTakenLowerSet(
   if (Array.isArray(taken)) {
     return new Set(taken.map((name) => String(name).toLowerCase()));
   }
-  throw new TypeError("taken harus Set<string> atau string[]");
+  throw new TypeError("taken must be a Set<string> or string[]");
 }
 
-/** Fisher-Yates shuffle memakai RNG yang diberikan. */
+/** Fisher-Yates shuffle using the given RNG. */
 function shuffled<T>(items: readonly T[], random: () => number): T[] {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i -= 1) {
@@ -235,7 +361,7 @@ function shuffled<T>(items: readonly T[], random: () => number): T[] {
   return arr;
 }
 
-/** Satu kandidat generator, atau null bila di luar pakem (panjang/rangkaian vokal). */
+/** One generator candidate, or null when outside the shape (length/vowel run). */
 function randomCandidate(random: () => number): string | null {
   const prefix = ROBOT_PREFIXES[
     Math.floor(random() * ROBOT_PREFIXES.length)
@@ -253,7 +379,43 @@ function generatorSpace(): number {
   return ROBOT_PREFIXES.length * ROBOT_SUFFIXES.length;
 }
 
+/**
+ * Exact set of distinct generator names (lowercased) the current tables
+ * can produce. Small enough (~2k pairs) to enumerate, so exhaustion is
+ * detected up front instead of by blind retry loops.
+ */
+function validGeneratorKeys(): Set<string> {
+  const keys = new Set<string>();
+  for (const prefix of ROBOT_PREFIXES) {
+    for (const suffix of ROBOT_SUFFIXES) {
+      const candidate = joinParts(prefix, suffix);
+      if (candidate.length < 4 || candidate.length > 6) continue;
+      if (TRIPLE_VOWEL.test(candidate)) continue;
+      keys.add(candidate.toLowerCase());
+    }
+  }
+  return keys;
+}
+
+/** Distinct names still available: curated ∪ generator minus `used`. */
+function remainingCapacity(used: Set<string>): number {
+  const pool = validGeneratorKeys();
+  for (const name of ROBOT_NAMES) pool.add(name.toLowerCase());
+  let remaining = 0;
+  for (const key of pool) {
+    if (!used.has(key)) remaining += 1;
+  }
+  return remaining;
+}
+
+function exhausted(): Error {
+  return new Error(
+    "Ran out of available robot names (taken covers the namespace)",
+  );
+}
+
 function generateOne(random: () => number, used: Set<string>): string {
+  if (remainingCapacity(used) < 1) throw exhausted();
   const maxAttempts = Math.min(generatorSpace() * 8 + 100, 200_000);
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const candidate = randomCandidate(random);
@@ -261,15 +423,15 @@ function generateOne(random: () => number, used: Set<string>): string {
     const key = candidate.toLowerCase();
     if (!used.has(key)) return candidate;
   }
-  throw new Error("Kehabisan nama robot yang tersedia (taken menutupi namespace)");
+  throw exhausted();
 }
 
 /**
- * Generate satu nama robot pendek, mis. `"Zyro"`.
+ * Generate one short robot name, e.g. `"Zyro"`.
  *
- * Dengan `seed` yang sama hasilnya selalu sama (kecuali `taken`
- * memaksa maju ke kandidat berikutnya, tetap deterministik).
- * Perbandingan `taken` case-insensitive.
+ * The same `seed` always yields the same result within the same library
+ * version (unless `taken` forces a move to the next candidate, which
+ * stays deterministic). `taken` comparison is case-insensitive.
  */
 export function robotName(options: RobotNameOptions = {}): string {
   const curated = resolveCurated(options.curated);
@@ -281,23 +443,25 @@ export function robotName(options: RobotNameOptions = {}): string {
       const key = name.toLowerCase();
       if (!used.has(key)) return name;
     }
-    // Curated habis (atau semua di-taken): lanjut ke generator.
+    // Curated list exhausted (or fully taken): fall through to generator.
   }
 
   return generateOne(random, used);
 }
 
 /**
- * Generate `count` nama robot yang unik satu sama lain
- * (case-insensitive) dan tidak ada di `options.taken`.
+ * Generate `count` robot names, unique among themselves
+ * (case-insensitive) and absent from `options.taken`.
  *
- * Dengan `curated: true` (default), `ROBOT_NAMES` dipakai dulu
- * lalu generator onset+rima saat habis, sehingga meminta lebih
- * dari `ROBOT_NAMES.length` tetap unik.
+ * With `curated: true` (the default), `ROBOT_NAMES` is used first,
+ * then the onset+rime generator, so requesting more than
+ * `ROBOT_NAMES.length` stays unique while capacity allows.
+ * Throws when `count` exceeds the remaining capacity instead of
+ * looping forever.
  */
 export function robotNames(count: number, options: RobotNameOptions = {}): string[] {
   if (!Number.isInteger(count) || count < 0) {
-    throw new RangeError("count harus integer >= 0");
+    throw new RangeError("count must be an integer >= 0");
   }
   if (count === 0) return [];
 
@@ -305,6 +469,8 @@ export function robotNames(count: number, options: RobotNameOptions = {}): strin
   const used = toTakenLowerSet(options.taken);
   const random = createRandom(options.seed);
   const result: string[] = [];
+
+  if (remainingCapacity(used) < count) throw exhausted();
 
   if (curated) {
     for (const name of shuffled(ROBOT_NAMES, random)) {
@@ -320,9 +486,7 @@ export function robotNames(count: number, options: RobotNameOptions = {}): strin
   let attempts = 0;
   while (result.length < count) {
     if (attempts >= maxAttempts) {
-      throw new Error(
-        "Kehabisan nama robot yang tersedia (taken menutupi namespace)",
-      );
+      throw exhausted();
     }
     attempts += 1;
     const candidate = randomCandidate(random);
